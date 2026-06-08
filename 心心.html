@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>AI半导体今日排行</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0c10;color:#e8ecf4;font-family:'PingFang SC','Hiragino Sans GB',sans-serif;min-height:100vh;padding:0 0 80px}
+.inner{max-width:480px;margin:0 auto;padding:24px 16px}
+.header{text-align:center;border-bottom:1px solid #1e2330;padding-bottom:20px;margin-bottom:24px}
+.tag{display:inline-block;font-size:10px;letter-spacing:3px;color:#00e5a0;border:1px solid #00e5a0;padding:3px 10px;border-radius:2px;margin-bottom:12px;font-family:monospace}
+.title{font-size:26px;font-weight:900;letter-spacing:2px;line-height:1.3;color:#fff;margin-bottom:8px}
+.sub{font-size:11px;color:#4a5068;font-family:monospace}
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.lbl{font-size:13px;color:#7a849c;font-family:monospace}
+.toggle{display:flex;background:#111318;border:1px solid #1e2330;border-radius:6px;overflow:hidden}
+.toggle button{padding:7px 18px;font-size:12px;border:none;cursor:pointer;background:transparent;color:#7a849c;font-family:inherit;transition:all 0.2s}
+.toggle button.au{background:rgba(0,229,160,0.15);color:#00e5a0}
+.toggle button.ad{background:rgba(255,77,106,0.15);color:#ff4d6a}
+.mbtn{width:100%;padding:15px;background:transparent;border:1px solid #00e5a0;border-radius:10px;color:#00e5a0;font-size:15px;cursor:pointer;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:1px;font-family:inherit;transition:opacity 0.2s}
+.mbtn:disabled{opacity:0.4;cursor:not-allowed}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.card{background:#111318;border:1px solid #1e2330;border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:10px;transition:opacity 0.3s}
+.r1{border-left:3px solid gold}
+.r2{border-left:3px solid silver}
+.r3{border-left:3px solid #cd7f32}
+.medal{font-size:24px;flex-shrink:0;width:30px;text-align:center}
+.info{flex:1;min-width:0}
+.sname{font-size:15px;font-weight:700;color:#e8ecf4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta{margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.scode{font-family:monospace;font-size:11px;color:#7a849c}
+.stag{font-size:10px;color:#4a5068;background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:3px}
+.right{text-align:right;flex-shrink:0}
+.pct{font-family:monospace;font-size:20px;font-weight:700}
+.up{color:#00e5a0}.dn{color:#ff4d6a}.flat{color:#7a849c}
+.price{font-family:monospace;font-size:12px;color:#7a849c;margin-top:2px}
+.chg{font-family:monospace;font-size:11px;margin-top:1px}
+.empty{text-align:center;padding:50px 20px;color:#4a5068}
+.empty .icon{font-size:44px;margin-bottom:12px}
+.empty p{font-size:13px;line-height:1.9}
+.ltips{text-align:center;padding:40px 20px;color:#7a849c;font-size:13px;line-height:2.4}
+.ts{text-align:center;font-family:monospace;font-size:11px;color:#4a5068;margin-top:10px;margin-bottom:4px}
+.notice{margin-top:24px;padding:12px 14px;border:1px solid #1e2330;border-radius:8px;font-size:11px;color:#4a5068;line-height:1.9}
+.notice strong{color:#7a849c}
+.warn{background:rgba(255,193,7,0.07);border:1px solid rgba(255,193,7,0.2);border-radius:8px;padding:10px 14px;font-size:11px;color:#a08030;margin-bottom:16px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="inner">
+  <div class="header">
+    <div class="tag">AI · MARKET · SCANNER</div>
+    <div class="title">🤖 AI半导体<br>今日排行</div>
+    <div class="sub" id="statusLine">实时行情 · 腾讯财经数据</div>
+  </div>
+
+  <div class="row">
+    <span class="lbl">TOP 3 排行</span>
+    <div class="toggle">
+      <button id="btnUp" class="au" onclick="setMode('up')">▲ 涨幅</button>
+      <button id="btnDn" onclick="setMode('down')">▼ 跌幅</button>
+    </div>
+  </div>
+
+  <button class="mbtn" id="mb" onclick="fetchAll()">
+    <span id="bi">⟳</span>
+    <span id="bt">获取今日排行</span>
+  </button>
+
+  <div id="warn" class="warn" style="display:none"></div>
+  <div id="content">
+    <div class="empty">
+      <div class="icon">📡</div>
+      <p>点击按钮获取<br>今日AI·半导体板块<br>实时涨跌排行</p>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>覆盖标的：</strong>30支AI·半导体核心股<br>
+    <strong>数据来源：</strong>腾讯财经实时行情（JSONP）<br>
+    <strong>更新方式：</strong>每次点击实时拉取<br>
+    <strong>免责声明：</strong>仅供参考，不构成投资建议
+  </div>
+</div>
+
+<script>
+// ===== 30支AI半导体核心股票池 =====
+const STOCKS = [
+  {code:'sh688981', name:'中芯国际', sector:'半导体'},
+  {code:'sh688012', name:'中微公司', sector:'半导体设备'},
+  {code:'sz002049', name:'紫光国微', sector:'芯片'},
+  {code:'sz002415', name:'海康威视', sector:'AI安防'},
+  {code:'sz300059', name:'东方财富', sector:'金融科技'},
+  {code:'sh600703', name:'三安光电', sector:'半导体'},
+  {code:'sh688041', name:'海光信息', sector:'AI芯片'},
+  {code:'sh688009', name:'中国软件', sector:'信创'},
+  {code:'sz002230', name:'科大讯飞', sector:'AI'},
+  {code:'sh600703', name:'三安光电', sector:'半导体'},
+  {code:'sh688223', name:'晶科能源', sector:'半导体'},
+  {code:'sz300760', name:'迈瑞医疗', sector:'AI医疗'},
+  {code:'sh688396', name:'华微电子', sector:'功率半导体'},
+  {code:'sh688047', name:'龙芯中科', sector:'CPU芯片'},
+  {code:'sh688521', name:'芯原股份', sector:'IP核'},
+  {code:'sz002236', name:'大华股份', sector:'AI视觉'},
+  {code:'sh688516', name:'奥比中光', sector:'3D视觉'},
+  {code:'sz300144', name:'宋城演艺', sector:'数字文旅'},
+  {code:'sh688256', name:'寒武纪', sector:'AI芯片'},
+  {code:'sz002292', name:'奥飞娱乐', sector:'VR/AR'},
+  {code:'sh688099', name:'晶晨股份', sector:'SoC芯片'},
+  {code:'sz300782', name:'卓胜微', sector:'射频芯片'},
+  {code:'sh688148', name:'芯碁微装', sector:'直写光刻'},
+  {code:'sz002180', name:'纳思达', sector:'打印芯片'},
+  {code:'sh603986', name:'兆易创新', sector:'存储芯片'},
+  {code:'sz300573', name:'兴齐眼药', sector:'AI医疗'},
+  {code:'sh688088', name:'虹软科技', sector:'AI视觉算法'},
+  {code:'sz300613', name:'富瀚微', sector:'视频芯片'},
+  {code:'sh688819', name:'天岳先进', sector:'碳化硅'},
+  {code:'sz002371', name:'北方华创', sector:'半导体设备'},
+];
+
+let mode = 'up';
+let allData = [];
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnUp').className = m==='up' ? 'au' : '';
+  document.getElementById('btnDn').className = m==='down' ? 'ad' : '';
+  if(allData.length > 0) renderTop3();
+}
+
+// 用腾讯财经JSONP接口，天然支持跨域
+function fetchQuote(codes) {
+  return new Promise((resolve) => {
+    const cbName = 'cb_' + Date.now();
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      document.body.removeChild(script);
+      resolve({});
+    }, 8000);
+
+    window[cbName] = function(data) {
+      clearTimeout(timeout);
+      delete window[cbName];
+      document.body.removeChild(script);
+      resolve(data);
+    };
+
+    // 腾讯财经行情接口，原生支持跨域JSONP
+    script.src = `https://qt.gtimg.cn/q=${codes.join(',')}&cb=${cbName}`;
+    document.body.appendChild(script);
+  });
+}
+
+async function fetchAll() {
+  const mb = document.getElementById('mb');
+  const bi = document.getElementById('bi');
+  const bt = document.getElementById('bt');
+  mb.disabled = true;
+  bi.innerHTML = '<span class="spin">⟳</span>';
+  bt.textContent = '实时拉取中...';
+  document.getElementById('warn').style.display = 'none';
+  document.getElementById('content').innerHTML = `<div class="ltips">📡 连接腾讯财经行情服务器...<br>📊 获取${STOCKS.length}支股票实时数据...<br>📈 计算涨跌幅排行...</div>`;
+
+  try {
+    // 分批请求，每批10支
+    const batchSize = 10;
+    const results = {};
+    for(let i = 0; i < STOCKS.length; i += batchSize) {
+      const batch = STOCKS.slice(i, i + batchSize);
+      const codes = batch.map(s => s.code);
+      const data = await fetchQuote(codes);
+      Object.assign(results, data);
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    // 解析腾讯财经返回数据
+    allData = [];
+    STOCKS.forEach(stock => {
+      const key = stock.code.replace('sh','sh').replace('sz','sz');
+      // 腾讯财经返回格式: v_sh600000="1~平安银行~000001~价格~昨收~..."
+      const raw = results['v_' + key] || results[key] || '';
+      if(!raw) return;
+      const parts = raw.split('~');
+      if(parts.length < 32) return;
+      const price = parseFloat(parts[3]);
+      const yestClose = parseFloat(parts[4]);
+      const open = parseFloat(parts[5]);
+      if(!price || !yestClose || price <= 0) return;
+      const pct = ((price - yestClose) / yestClose * 100);
+      allData.push({
+        name: stock.name,
+        code: stock.code.replace('sh','').replace('sz',''),
+        sector: stock.sector,
+        price: price.toFixed(2),
+        pct: pct,
+        yestClose: yestClose.toFixed(2)
+      });
+    });
+
+    if(allData.length === 0) {
+      document.getElementById('warn').style.display = 'block';
+      document.getElementById('warn').innerHTML = '⚠️ 暂未获取到数据，可能原因：<br>① 非交易时段（工作日9:30-15:00）<br>② 网络连接问题，请稍后重试';
+      document.getElementById('content').innerHTML = '';
+    } else {
+      renderTop3();
+    }
+  } catch(e) {
+    document.getElementById('warn').style.display = 'block';
+    document.getElementById('warn').innerHTML = '⚠️ 数据加载失败，请检查网络后重试';
+    document.getElementById('content').innerHTML = '';
+  } finally {
+    mb.disabled = false;
+    bi.textContent = '⟳';
+    bt.textContent = '刷新数据';
+  }
+}
+
+function renderTop3() {
+  const sorted = [...allData].sort((a,b) => mode==='up' ? b.pct-a.pct : a.pct-b.pct);
+  const top3 = sorted.slice(0,3);
+  const medals = ['🥇','🥈','🥉'];
+  const rc = ['r1','r2','r3'];
+  let html = '';
+  top3.forEach((s,i) => {
+    const isUp = s.pct > 0;
+    const isFlat = Math.abs(s.pct) < 0.01;
+    const cls = isFlat ? 'flat' : (isUp ? 'up' : 'dn');
+    const pctStr = isFlat ? '0.00%' : (isUp ? `+${s.pct.toFixed(2)}%` : `${s.pct.toFixed(2)}%`);
+    const chgAmt = (parseFloat(s.price) - parseFloat(s.yestClose)).toFixed(2);
+    const chgStr = isUp ? `+${chgAmt}` : chgAmt;
+    html += `
+    <div class="card ${rc[i]}">
+      <div class="medal">${medals[i]}</div>
+      <div class="info">
+        <div class="sname">${s.name}</div>
+        <div class="meta">
+          <span class="scode">${s.code}</span>
+          <span class="stag">${s.sector}</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="pct ${cls}">${pctStr}</div>
+        <div class="price">¥${s.price}</div>
+        <div class="chg ${cls}">${chgStr}</div>
+      </div>
+    </div>`;
+  });
+  html += `<div class="ts">更新时间：${new Date().toLocaleTimeString('zh-CN')} · 共${allData.length}支有效数据</div>`;
+  document.getElementById('content').innerHTML = html;
+}
+</script>
+</body>
+</html>
