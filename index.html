@@ -23,23 +23,31 @@ body{background:#0a0c10;color:#e8ecf4;font-family:'PingFang SC','Hiragino Sans G
 .mbtn:disabled{opacity:0.4;cursor:not-allowed}
 .spin{display:inline-block;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.card{background:#111318;border:1px solid #1e2330;border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:10px}
-.r1{border-left:3px solid gold}.r2{border-left:3px solid silver}.r3{border-left:3px solid #cd7f32}
-.medal{font-size:24px;flex-shrink:0;width:30px;text-align:center}
+.card{background:#111318;border:1px solid #1e2330;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.r1{border-left:3px solid gold}
+.r2{border-left:3px solid silver}
+.r3{border-left:3px solid #cd7f32}
+.r4,.r5,.r6,.r7,.r8,.r9,.r10{border-left:3px solid #1e2330}
+.rank{font-family:monospace;font-size:15px;font-weight:700;color:#4a5068;width:24px;text-align:center;flex-shrink:0}
+.r1 .rank{color:gold}
+.r2 .rank{color:silver}
+.r3 .rank{color:#cd7f32}
 .info{flex:1;min-width:0}
 .sname{font-size:15px;font-weight:700;color:#e8ecf4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .meta{margin-top:4px;display:flex;gap:8px;align-items:center}
 .scode{font-family:monospace;font-size:11px;color:#7a849c}
 .stag{font-size:10px;color:#4a5068;background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:3px}
 .right{text-align:right;flex-shrink:0}
-.pct{font-family:monospace;font-size:20px;font-weight:700}
+.pct{font-family:monospace;font-size:18px;font-weight:700}
 .up{color:#00e5a0}.dn{color:#ff4d6a}
-.price{font-family:monospace;font-size:12px;color:#7a849c;margin-top:2px}
+.price-row{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:3px}
+.price{font-family:monospace;font-size:13px;font-weight:600;color:#e8ecf4}
+.chg{font-family:monospace;font-size:11px;color:#7a849c}
 .empty{text-align:center;padding:50px 20px;color:#4a5068}
 .empty .icon{font-size:44px;margin-bottom:12px}
 .empty p{font-size:13px;line-height:1.9}
 .ltips{text-align:center;padding:40px 20px;color:#7a849c;font-size:13px;line-height:2.4}
-.ts{text-align:center;font-family:monospace;font-size:11px;color:#4a5068;margin-top:10px}
+.ts{text-align:center;font-family:monospace;font-size:11px;color:#4a5068;margin-top:10px;margin-bottom:4px}
 .err{background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.2);border-radius:10px;padding:16px;text-align:center;color:#ff4d6a;font-size:13px;line-height:1.8;margin-bottom:16px}
 .notice{margin-top:24px;padding:12px 14px;border:1px solid #1e2330;border-radius:8px;font-size:11px;color:#4a5068;line-height:1.9}
 .notice strong{color:#7a849c}
@@ -47,6 +55,7 @@ body{background:#0a0c10;color:#e8ecf4;font-family:'PingFang SC','Hiragino Sans G
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:12px;border:1px solid #1e2330;background:transparent;color:#7a849c;cursor:pointer;font-family:inherit;transition:all 0.2s}
 .tab.on{background:#00e5a0;color:#000;border-color:#00e5a0;font-weight:700}
+.divider{text-align:center;font-size:11px;color:#1e2330;margin:4px 0 8px;letter-spacing:2px}
 </style>
 </head>
 <body>
@@ -66,7 +75,7 @@ body{background:#0a0c10;color:#e8ecf4;font-family:'PingFang SC','Hiragino Sans G
   </div>
 
   <div class="row">
-    <span class="lbl">TOP 3 排行</span>
+    <span class="lbl">TOP 10 排行</span>
     <div class="toggle">
       <button id="btnUp" class="au" onclick="setMode('up')">▲ 涨幅</button>
       <button id="btnDn" onclick="setMode('down')">▼ 跌幅</button>
@@ -117,7 +126,7 @@ async function fetchData(){
   mb.disabled=true;
   bi.innerHTML='<span class="spin">⟳</span>';
   bt.textContent='加载中...';
-  document.getElementById('content').innerHTML=`<div class="ltips">📡 连接服务器...<br>📊 获取实时数据...<br>📈 计算排行...</div>`;
+  document.getElementById('content').innerHTML=`<div class="ltips">📡 连接服务器...<br>📊 获取实时数据...<br>📈 计算TOP 10排行...</div>`;
 
   const po=mode==='up'?1:0;
 
@@ -129,7 +138,7 @@ async function fetchData(){
       document.getElementById('content').innerHTML=`<div class="err">暂无数据<br>请在交易时段使用（工作日 9:30–15:00）</div>`;
       return;
     }
-    const valid=list.filter(s=>s.f3!=null&&s.f3>-999&&s.f14&&s.f12).slice(0,3);
+    const valid=list.filter(s=>s.f3!=null&&s.f3>-999&&s.f14&&s.f12).slice(0,10);
     render(valid);
   }catch(e){
     document.getElementById('content').innerHTML=`<div class="err">数据获取失败，请稍后重试</div>`;
@@ -142,15 +151,19 @@ async function fetchData(){
 
 function render(stocks){
   const medals=['🥇','🥈','🥉'];
-  const rc=['r1','r2','r3'];
   let html='';
   stocks.forEach((s,i)=>{
     const pct=parseFloat(s.f3).toFixed(2);
     const isUp=parseFloat(pct)>=0;
     const pctStr=isUp?`+${pct}%`:`${pct}%`;
     const price=s.f2>0?(s.f2/100).toFixed(2):'--';
-    html+=`<div class="card ${rc[i]}">
-      <div class="medal">${medals[i]}</div>
+    const yest=s.f15>0?(s.f15/100).toFixed(2):null;
+    const chgAmt=yest?(parseFloat(price)-parseFloat(yest)).toFixed(2):null;
+    const chgStr=chgAmt?(parseFloat(chgAmt)>=0?`+${chgAmt}`:`${chgAmt}`):'';
+    const rankLabel=i<3?medals[i]:`${i+1}`;
+    if(i===3) html+=`<div class="divider">— 4至10名 —</div>`;
+    html+=`<div class="card r${i+1}">
+      <div class="rank">${rankLabel}</div>
       <div class="info">
         <div class="sname">${s.f14}</div>
         <div class="meta">
@@ -160,7 +173,10 @@ function render(stocks){
       </div>
       <div class="right">
         <div class="pct ${isUp?'up':'dn'}">${pctStr}</div>
-        <div class="price">¥${price}</div>
+        <div class="price-row">
+          <span class="price">¥${price}</span>
+          ${chgStr?`<span class="chg ${isUp?'up':'dn'}">${chgStr}</span>`:''}
+        </div>
       </div>
     </div>`;
   });
