@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Market Cycle Assistant</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0c10;color:#e8ecf4;font-family:'PingFang SC','Hiragino Sans GB',sans-serif;min-height:100vh;padding:0 0 80px}
+.inner{max-width:520px;margin:0 auto;padding:20px 14px}
+
+/* 头部 */
+.header{text-align:center;border-bottom:1px solid #1e2330;padding-bottom:16px;margin-bottom:18px}
+.tag{display:inline-block;font-size:9px;letter-spacing:3px;color:#00e5a0;border:1px solid #00e5a0;padding:2px 10px;border-radius:2px;margin-bottom:8px;font-family:monospace}
+.title{font-size:22px;font-weight:900;letter-spacing:2px;color:#fff;margin-bottom:4px}
+.sub{font-size:10px;color:#4a5068;font-family:monospace}
+
+/* 板块切换 */
+.group-tabs{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none}
+.group-tabs::-webkit-scrollbar{display:none}
+.gtab{flex-shrink:0;padding:5px 11px;border-radius:4px;font-size:11px;border:1px solid #1e2330;background:transparent;color:#7a849c;cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s}
+.gtab[data-group="total"].on{background:rgba(180,100,255,0.15);color:#b464ff;border-color:#b464ff}
+.gtab[data-group="ai"].on{background:rgba(0,229,160,0.15);color:#00e5a0;border-color:#00e5a0}
+.gtab[data-group="material"].on{background:rgba(255,180,0,0.15);color:#ffb400;border-color:#ffb400}
+.gtab[data-group="energy"].on{background:rgba(0,180,255,0.15);color:#00b4ff;border-color:#00b4ff}
+.gtab[data-group="manufacture"].on{background:rgba(255,77,106,0.15);color:#ff4d6a;border-color:#ff4d6a}
+.sub-tabs{display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;min-height:28px}
+.sub-tabs::-webkit-scrollbar{display:none}
+.stab{flex-shrink:0;padding:4px 10px;border-radius:16px;font-size:10px;border:1px solid #1e2330;background:transparent;color:#7a849c;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.stab.on{background:#00e5a0;color:#000;border-color:#00e5a0;font-weight:700}
+
+/* 控制栏 */
+.ctrl-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.lbl{font-size:12px;color:#7a849c;font-family:monospace}
+.toggle{display:flex;background:#111318;border:1px solid #1e2330;border-radius:6px;overflow:hidden}
+.toggle button{padding:5px 14px;font-size:11px;border:none;cursor:pointer;background:transparent;color:#7a849c;font-family:inherit;transition:all 0.2s}
+.toggle button.au{background:rgba(0,229,160,0.15);color:#00e5a0}
+.toggle button.ad{background:rgba(255,77,106,0.15);color:#ff4d6a}
+
+/* AI模式切换 */
+.mode-row{display:flex;gap:6px;margin-bottom:12px}
+.mode-btn{flex:1;padding:7px;font-size:11px;border-radius:6px;border:1px solid #1e2330;background:transparent;color:#7a849c;cursor:pointer;font-family:inherit;text-align:center;transition:all 0.2s}
+.mode-btn.on{border-color:#00e5a0;color:#00e5a0;background:rgba(0,229,160,0.08)}
+
+.mbtn{width:100%;padding:12px;background:transparent;border:1px solid #00e5a0;border-radius:10px;color:#00e5a0;font-size:14px;cursor:pointer;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:1px;font-family:inherit}
+.mbtn:disabled{opacity:0.4;cursor:not-allowed}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 股票卡片 */
+.card{background:#111318;border:1px solid #1e2330;border-radius:12px;margin-bottom:10px;overflow:hidden}
+.r1{border-left:3px solid gold}.r2{border-left:3px solid silver}.r3{border-left:3px solid #cd7f32}.rn{border-left:3px solid #1e2330}
+.card-top{padding:12px 14px;display:flex;align-items:center;gap:10px}
+.rank{font-family:monospace;font-size:13px;font-weight:700;color:#4a5068;width:20px;text-align:center;flex-shrink:0}
+.r1 .rank{color:gold}.r2 .rank{color:silver}.r3 .rank{color:#cd7f32}
+.stock-info{flex:1;min-width:0}
+.sname{font-size:14px;font-weight:700;color:#e8ecf4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.smeta{margin-top:3px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.scode{font-family:monospace;font-size:10px;color:#7a849c}
+.stag2{font-size:9px;color:#4a5068;background:rgba(255,255,255,0.05);padding:1px 5px;border-radius:3px}
+.gtag{font-size:9px;padding:1px 5px;border-radius:3px}
+.price-block{text-align:right;flex-shrink:0}
+.pct{font-family:monospace;font-size:17px;font-weight:700}
+.up{color:#00e5a0}.dn{color:#ff4d6a}
+.price-row{display:flex;gap:5px;align-items:center;justify-content:flex-end;margin-top:2px}
+.price{font-family:monospace;font-size:12px;font-weight:600;color:#e8ecf4}
+.chg{font-family:monospace;font-size:10px}
+
+/* AI分析栏 */
+.ai-panel{border-top:1px solid #1e2330;padding:10px 14px;background:#0d1018}
+.ai-panel.loading{text-align:center;color:#4a5068;font-size:11px;padding:12px}
+.ai-row{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:6px}
+.ai-badge{font-size:10px;padding:2px 8px;border-radius:3px;font-weight:700;font-family:monospace;flex-shrink:0}
+.badge-buy{background:rgba(0,229,160,0.2);color:#00e5a0;border:1px solid rgba(0,229,160,0.4)}
+.badge-hold{background:rgba(64,128,255,0.2);color:#4080ff;border:1px solid rgba(64,128,255,0.4)}
+.badge-reduce{background:rgba(255,140,0,0.2);color:#ff8c00;border:1px solid rgba(255,140,0,0.4)}
+.badge-exit{background:rgba(255,77,106,0.2);color:#ff4d6a;border:1px solid rgba(255,77,106,0.4)}
+.wave-badge{font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(180,100,255,0.15);color:#b464ff;border:1px solid rgba(180,100,255,0.3);font-family:monospace}
+.trend-badge{font-size:10px;padding:2px 8px;border-radius:3px;font-family:monospace}
+.trend-up{background:rgba(0,229,160,0.1);color:#00e5a0;border:1px solid rgba(0,229,160,0.2)}
+.trend-side{background:rgba(255,180,0,0.1);color:#ffb400;border:1px solid rgba(255,180,0,0.2)}
+.trend-down{background:rgba(255,77,106,0.1);color:#ff4d6a;border:1px solid rgba(255,77,106,0.2)}
+.space-badge{font-size:10px;padding:2px 8px;border-radius:3px;font-family:monospace}
+.space-yes{background:rgba(0,229,160,0.08);color:#00e5a0;border:1px solid #1e2330}
+.space-end{background:rgba(255,140,0,0.08);color:#ff8c00;border:1px solid #1e2330}
+.space-done{background:rgba(255,77,106,0.08);color:#ff4d6a;border:1px solid #1e2330}
+.risk-time{font-size:10px;color:#7a849c;margin-top:4px;font-family:monospace;line-height:1.6}
+.risk-time span{color:#ffb400}
+
+/* AI加载动画 */
+.ai-loading-row{display:flex;align-items:center;gap:6px;font-size:10px;color:#4a5068}
+.dot-anim{display:flex;gap:3px}
+.dot-anim span{width:4px;height:4px;background:#4a5068;border-radius:50%;animation:dotpulse 1.2s ease-in-out infinite}
+.dot-anim span:nth-child(2){animation-delay:0.2s}
+.dot-anim span:nth-child(3){animation-delay:0.4s}
+@keyframes dotpulse{0%,80%,100%{opacity:0.3}40%{opacity:1}}
+
+.empty{text-align:center;padding:40px 20px;color:#4a5068}
+.empty .icon{font-size:36px;margin-bottom:10px}
+.empty p{font-size:12px;line-height:1.9}
+.ltips{text-align:center;padding:30px 20px;color:#7a849c;font-size:12px;line-height:2.4}
+.ts{text-align:center;font-family:monospace;font-size:10px;color:#4a5068;margin-top:8px}
+.err{background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.2);border-radius:10px;padding:12px;text-align:center;color:#ff4d6a;font-size:12px;line-height:1.8;margin-bottom:12px}
+.divider{text-align:center;font-size:10px;color:#2a3040;margin:4px 0 6px;letter-spacing:2px}
+.notice{margin-top:18px;padding:10px 12px;border:1px solid #1e2330;border-radius:8px;font-size:10px;color:#4a5068;line-height:1.9}
+.notice strong{color:#7a849c}
+</style>
+</head>
+<body>
+<div class="inner">
+  <div class="header">
+    <div class="tag">MARKET CYCLE ASSISTANT</div>
+    <div class="title">🧠 智能战法系统</div>
+    <div class="sub">波段周期判断 · 涨跌排行 · 退出预警</div>
+  </div>
+
+  <div class="group-tabs" id="groupTabs">
+    <button class="gtab on" data-group="total">🏆 总榜</button>
+    <button class="gtab" data-group="ai">🤖 AI半导体</button>
+    <button class="gtab" data-group="material">🪨 新材料</button>
+    <button class="gtab" data-group="energy">⚡ 新能源</button>
+    <button class="gtab" data-group="manufacture">🏭 高端制造</button>
+  </div>
+  <div class="sub-tabs" id="subTabs"></div>
+
+  <div class="ctrl-row">
+    <span class="lbl" id="topLabel">TOP 10 总榜</span>
+    <div class="toggle">
+      <button id="btnUp" class="au" onclick="setMode('up')">▲ 涨幅</button>
+      <button id="btnDn" onclick="setMode('down')">▼ 跌幅</button>
+    </div>
+  </div>
+
+  <!-- AI模式 -->
+  <div class="mode-row">
+    <button class="mode-btn on" id="modeRule" onclick="setAiMode('rule')">⚡ 规则引擎分析</button>
+    <button class="mode-btn" id="modeAi" onclick="setAiMode('ai')">🧠 AI深度分析</button>
+  </div>
+
+  <button class="mbtn" id="mb" onclick="fetchData()">
+    <span id="bi">⟳</span>
+    <span id="bt">获取排行 + 战法分析</span>
+  </button>
+
+  <div id="content">
+    <div class="empty"><div class="icon">🧠</div><p>选择板块点击按钮<br>获取排行榜 + AI战法分析</p></div>
+  </div>
+
+  <div class="notice">
+    <strong>分析模式：</strong>规则引擎（即时）/ AI深度分析（联网）<br>
+    <strong>战法框架：</strong>波浪阶段 · 趋势判断 · 风险时间窗口<br>
+    <strong>免责声明：</strong>仅供参考，不构成投资建议
+  </div>
+</div>
+
+<script>
+// ============ 股票池 ============
+const POOL = {
+  ai:{
+    ai:[
+      {code:'sh688256',name:'寒武纪',s:'AI芯片'},{code:'sh688041',name:'海光信息',s:'AI芯片'},
+      {code:'sh688047',name:'龙芯中科',s:'CPU'},{code:'sz002230',name:'科大讯飞',s:'AI'},
+      {code:'sh688088',name:'虹软科技',s:'AI视觉'},{code:'sz002415',name:'海康威视',s:'AI安防'},
+      {code:'sz002236',name:'大华股份',s:'AI视觉'},{code:'sh688516',name:'奥比中光',s:'3D视觉'},
+      {code:'sh688009',name:'中国软件',s:'信创'},{code:'sz300450',name:'先导智能',s:'AI装备'},
+    ],
+    semi:[
+      {code:'sh688981',name:'中芯国际',s:'晶圆代工'},{code:'sh688012',name:'中微公司',s:'刻蚀设备'},
+      {code:'sz002371',name:'北方华创',s:'半导体设备'},{code:'sh688148',name:'芯碁微装',s:'光刻设备'},
+      {code:'sh688819',name:'天岳先进',s:'碳化硅'},{code:'sh688396',name:'华微电子',s:'功率半导体'},
+      {code:'sh603986',name:'兆易创新',s:'存储芯片'},{code:'sz300782',name:'卓胜微',s:'射频芯片'},
+      {code:'sh688521',name:'芯原股份',s:'IP核'},{code:'sh688120',name:'华海清科',s:'CMP设备'},
+    ],
+    chip:[
+      {code:'sz002049',name:'紫光国微',s:'安全芯片'},{code:'sh688099',name:'晶晨股份',s:'SoC'},
+      {code:'sz300613',name:'富瀚微',s:'视频芯片'},{code:'sz002180',name:'纳思达',s:'打印芯片'},
+      {code:'sh688711',name:'宏微科技',s:'IGBT'},{code:'sh688469',name:'芯导科技',s:'模拟芯片'},
+      {code:'sh688041',name:'海光信息',s:'AI芯片'},{code:'sh688256',name:'寒武纪',s:'AI芯片'},
+      {code:'sh688047',name:'龙芯中科',s:'CPU'},{code:'sz002371',name:'北方华创',s:'设备'},
+    ],
+    compute:[
+      {code:'sz000977',name:'浪潮信息',s:'服务器'},{code:'sh601138',name:'工业富联',s:'算力硬件'},
+      {code:'sz300308',name:'中际旭创',s:'光模块'},{code:'sz002281',name:'光迅科技',s:'光模块'},
+      {code:'sh688165',name:'大族激光',s:'激光设备'},{code:'sh600588',name:'用友网络',s:'算力软件'},
+      {code:'sh688589',name:'力芯微',s:'电源芯片'},{code:'sh603986',name:'兆易创新',s:'存储'},
+    ],
+  },
+  material:{
+    magnetic:[
+      {code:'sz300748',name:'金力永磁',s:'稀土永磁'},{code:'sz002601',name:'龙磁科技',s:'磁性材料'},
+      {code:'sh600111',name:'北方稀土',s:'稀土永磁'},{code:'sh603799',name:'华友钴业',s:'钴'},
+      {code:'sz002466',name:'天齐锂业',s:'锂资源'},{code:'sz002460',name:'赣锋锂业',s:'锂'},
+      {code:'sh601899',name:'紫金矿业',s:'小金属'},{code:'sz300073',name:'当升科技',s:'正极材料'},
+      {code:'sz002497',name:'雅化集团',s:'锂盐'},{code:'sh688707',name:'振华新材',s:'磁性材料'},
+    ],
+    graphene:[
+      {code:'sh600516',name:'方大炭素',s:'石墨烯'},{code:'sh603659',name:'璞泰来',s:'石墨负极'},
+      {code:'sz300568',name:'星源材质',s:'隔膜'},{code:'sh601677',name:'明泰铝业',s:'新材料'},
+      {code:'sz300073',name:'当升科技',s:'正极'},{code:'sz002460',name:'赣锋锂业',s:'锂'},
+      {code:'sh688005',name:'容百科技',s:'正极'},{code:'sz002756',name:'永兴材料',s:'锂材料'},
+      {code:'sh600197',name:'伊力特',s:'锰'},{code:'sz002082',name:'万邦达',s:'小金属'},
+    ],
+    rareearth:[
+      {code:'sh600111',name:'北方稀土',s:'稀土永磁'},{code:'sz300748',name:'金力永磁',s:'稀土永磁'},
+      {code:'sh603799',name:'华友钴业',s:'钴'},{code:'sz002466',name:'天齐锂业',s:'锂资源'},
+      {code:'sz002460',name:'赣锋锂业',s:'锂'},{code:'sh601899',name:'紫金矿业',s:'小金属'},
+      {code:'sz002082',name:'万邦达',s:'锰'},{code:'sh600197',name:'伊力特',s:'锰'},
+      {code:'sz002497',name:'雅化集团',s:'锂盐'},{code:'sz002601',name:'龙磁科技',s:'磁性材料'},
+    ],
+    metal:[
+      {code:'sh600197',name:'伊力特',s:'锰'},{code:'sz002082',name:'万邦达',s:'锰'},
+      {code:'sh601899',name:'紫金矿业',s:'有色金属'},{code:'sh603799',name:'华友钴业',s:'钴'},
+      {code:'sz002460',name:'赣锋锂业',s:'锂'},{code:'sz002466',name:'天齐锂业',s:'锂'},
+      {code:'sh600111',name:'北方稀土',s:'稀土'},{code:'sz002497',name:'雅化集团',s:'锂盐'},
+      {code:'sz002756',name:'永兴材料',s:'锂材料'},{code:'sh600808',name:'马钢股份',s:'钢铁'},
+    ],
+  },
+  energy:{
+    lithium:[
+      {code:'sz300750',name:'宁德时代',s:'锂电池'},{code:'sz002460',name:'赣锋锂业',s:'锂资源'},
+      {code:'sz002466',name:'天齐锂业',s:'锂资源'},{code:'sh603659',name:'璞泰来',s:'负极材料'},
+      {code:'sz300568',name:'星源材质',s:'隔膜'},{code:'sh688005',name:'容百科技',s:'正极'},
+      {code:'sz300073',name:'当升科技',s:'正极材料'},{code:'sz002756',name:'永兴材料',s:'锂盐'},
+      {code:'sz002497',name:'雅化集团',s:'锂盐'},{code:'sz002074',name:'国轩高科',s:'动力电池'},
+    ],
+    hydrogen:[
+      {code:'sh601985',name:'中国核电',s:'氢能'},{code:'sh601727',name:'上海电气',s:'氢能设备'},
+      {code:'sz300124',name:'汇川技术',s:'氢能设备'},{code:'sh600438',name:'通威股份',s:'绿氢'},
+      {code:'sh601238',name:'广汽集团',s:'氢能车'},{code:'sz002202',name:'金风科技',s:'风电制氢'},
+      {code:'sz002594',name:'比亚迪',s:'氢能车'},{code:'sz002074',name:'国轩高科',s:'燃料电池'},
+    ],
+    solid:[
+      {code:'sz300750',name:'宁德时代',s:'固态电池'},{code:'sz002594',name:'比亚迪',s:'固态电池'},
+      {code:'sh603659',name:'璞泰来',s:'固态负极'},{code:'sh688005',name:'容百科技',s:'固态正极'},
+      {code:'sz300568',name:'星源材质',s:'固态隔膜'},{code:'sz002460',name:'赣锋锂业',s:'固态锂'},
+      {code:'sz300073',name:'当升科技',s:'正极材料'},{code:'sz002756',name:'永兴材料',s:'锂材料'},
+      {code:'sh688707',name:'振华新材',s:'固态材料'},{code:'sz002074',name:'国轩高科',s:'固态电池'},
+    ],
+    nevcar:[
+      {code:'sz002594',name:'比亚迪',s:'新能源车'},{code:'sh601633',name:'长城汽车',s:'新能源车'},
+      {code:'sh601238',name:'广汽集团',s:'新能源车'},{code:'sh600104',name:'上汽集团',s:'新能源车'},
+      {code:'sz000625',name:'长安汽车',s:'新能源车'},{code:'sh601689',name:'拓普集团',s:'汽车零部件'},
+      {code:'sz300750',name:'宁德时代',s:'动力电池'},{code:'sz002074',name:'国轩高科',s:'动力电池'},
+      {code:'sz300124',name:'汇川技术',s:'电机'},{code:'sz002202',name:'金风科技',s:'配套'},
+    ],
+    fuel:[
+      {code:'sz002074',name:'国轩高科',s:'燃料电池'},{code:'sh601727',name:'上海电气',s:'燃料电池'},
+      {code:'sz300124',name:'汇川技术',s:'燃料电池'},{code:'sh601985',name:'中国核电',s:'氢燃料'},
+      {code:'sz002594',name:'比亚迪',s:'燃料电池'},{code:'sh600438',name:'通威股份',s:'氢能'},
+      {code:'sz002202',name:'金风科技',s:'燃料配套'},{code:'sh601238',name:'广汽集团',s:'燃料车'},
+    ],
+  },
+  manufacture:{
+    robot:[
+      {code:'sz300124',name:'汇川技术',s:'工业机器人'},{code:'sh603025',name:'大豪科技',s:'机器人控制'},
+      {code:'sz002527',name:'新时达',s:'机器人'},{code:'sh603960',name:'克来机电',s:'工业机器人'},
+      {code:'sz300296',name:'汉唐自科',s:'机器人'},{code:'sh688100',name:'威立雅',s:'机器人'},
+      {code:'sz002750',name:'龙津药业',s:'人形机器人'},{code:'sz300485',name:'赛升药业',s:'人形机器人'},
+    ],
+    military:[
+      {code:'sh600893',name:'航发动力',s:'航空发动机'},{code:'sh600760',name:'中航沈飞',s:'战斗机'},
+      {code:'sz002179',name:'中航光电',s:'军工电子'},{code:'sz002049',name:'紫光国微',s:'军工芯片'},
+      {code:'sh600316',name:'洪都航空',s:'军工'},{code:'sh600765',name:'中航重机',s:'军工锻件'},
+      {code:'sz002415',name:'海康威视',s:'军工安防'},{code:'sh688002',name:'睿创微纳',s:'军工芯片'},
+    ],
+    nuclear:[
+      {code:'sh601985',name:'中国核电',s:'核电运营'},{code:'sh601727',name:'上海电气',s:'核电设备'},
+      {code:'sz000777',name:'中核科技',s:'核电阀门'},{code:'sh603699',name:'纽威股份',s:'核电阀门'},
+      {code:'sz002885',name:'京源环保',s:'核电水处理'},{code:'sh601390',name:'中国中铁',s:'核电建设'},
+      {code:'sh600308',name:'华泰股份',s:'核电材料'},{code:'sh600995',name:'文山电力',s:'核电'},
+    ],
+    drone:[
+      {code:'sh600760',name:'中航沈飞',s:'无人机'},{code:'sz002179',name:'中航光电',s:'无人机连接'},
+      {code:'sz002049',name:'紫光国微',s:'无人机芯片'},{code:'sh688002',name:'睿创微纳',s:'无人机探测'},
+      {code:'sz300124',name:'汇川技术',s:'无人机电机'},{code:'sh600893',name:'航发动力',s:'无人机动力'},
+      {code:'sh601989',name:'中国重工',s:'海上无人机'},{code:'sh600150',name:'中国船舶',s:'无人艇'},
+    ],
+    marine:[
+      {code:'sh601989',name:'中国重工',s:'海工装备'},{code:'sh600150',name:'中国船舶',s:'船舶制造'},
+      {code:'sh601727',name:'上海电气',s:'海工设备'},{code:'sh603699',name:'纽威股份',s:'海工阀门'},
+      {code:'sh600308',name:'华泰股份',s:'海工材料'},{code:'sz002202',name:'金风科技',s:'海上风电'},
+      {code:'sh601390',name:'中国中铁',s:'海工建设'},{code:'sh600808',name:'马钢股份',s:'海工钢材'},
+      {code:'sh600072',name:'中船科技',s:'海工'},{code:'sh600150',name:'中国船舶',s:'船舶'},
+    ],
+  }
+};
+
+// 合并all
+Object.keys(POOL).forEach(g=>{
+  const merged=[],seen=new Set();
+  Object.values(POOL[g]).forEach(arr=>arr.forEach(s=>{if(!seen.has(s.code)){seen.add(s.code);merged.push({...s,groupKey:g});}}));
+  POOL[g].all=merged;
+});
+
+const GROUPS={
+  ai:{subs:{all:'全部',ai:'人工智能',semi:'半导体',chip:'芯片',compute:'算力设备'}},
+  material:{subs:{all:'全部',magnetic:'磁性材料',graphene:'石墨烯',rareearth:'稀土永磁',metal:'小金属'}},
+  energy:{subs:{all:'全部',lithium:'锂电池',hydrogen:'氢能源',fuel:'燃料电池',solid:'固态电池',nevcar:'新能源汽车'}},
+  manufacture:{subs:{all:'全部',robot:'机器人',military:'军工',nuclear:'核电',drone:'无人机',marine:'海工装备'}}
+};
+const GROUP_COLORS={ai:'#00e5a0',material:'#ffb400',energy:'#00b4ff',manufacture:'#ff4d6a'};
+const GROUP_NAMES={ai:'AI半导体',material:'新材料',energy:'新能源',manufacture:'高端制造'};
+
+let mode='up', curGroup='total', curSub='all', aiMode='rule';
+
+function setAiMode(m){
+  aiMode=m;
+  document.getElementById('modeRule').classList.toggle('on',m==='rule');
+  document.getElementById('modeAi').classList.toggle('on',m==='ai');
+}
+
+function renderSubTabs(group){
+  const c=document.getElementById('subTabs');
+  if(group==='total'){c.innerHTML='';return;}
+  const subs=GROUPS[group].subs;
+  c.innerHTML=Object.keys(subs).map(k=>`<button class="stab ${k===curSub?'on':''}" data-sub="${k}">${subs[k]}</button>`).join('');
+}
+
+document.getElementById('groupTabs').addEventListener('click',function(e){
+  const t=e.target.closest('.gtab');if(!t)return;
+  document.querySelectorAll('.gtab').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');curGroup=t.dataset.group;curSub='all';
+  renderSubTabs(curGroup);
+  document.getElementById('topLabel').textContent=curGroup==='total'?'TOP 10 总榜':'TOP 10 排行';
+  document.getElementById('content').innerHTML='<div class="empty"><div class="icon">🧠</div><p>点击按钮获取排行</p></div>';
+});
+document.getElementById('subTabs').addEventListener('click',function(e){
+  const t=e.target.closest('.stab');if(!t)return;
+  document.querySelectorAll('.stab').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');curSub=t.dataset.sub;
+});
+function setMode(m){
+  mode=m;
+  document.getElementById('btnUp').className=m==='up'?'au':'';
+  document.getElementById('btnDn').className=m==='down'?'ad':'';
+}
+
+// ============ 规则引擎战法分析 ============
+function analyzeStock(stock){
+  const pct=stock.pct;
+  const absPct=Math.abs(pct);
+  let wave,trend,space,action,riskTime,confidence;
+
+  // 波浪阶段 - 基于涨幅判断
+  if(pct>0){
+    if(absPct>=9){wave='5浪末端';trend='up';space='已结束';action='EXIT';riskTime='已进入末端结构，随时可能反转';confidence=85;}
+    else if(absPct>=7){wave='5浪';trend='up';space='接近结束';action='REDUCE';riskTime='预计1-3天内可能见顶，建议减仓';confidence=80;}
+    else if(absPct>=5){wave='3浪后期';trend='up';space='接近结束';action='REDUCE';riskTime='预计3-5天进入高风险区，注意量能变化';confidence=75;}
+    else if(absPct>=3){wave='3浪主升';trend='up';space='还有';action='HOLD';riskTime='当前主升浪，3-10天可能进入高风险';confidence=70;}
+    else if(absPct>=1.5){wave='1浪启动';trend='up';space='还有';action='BUY';riskTime='刚启动，仍有上行空间，关注量能放大';confidence=65;}
+    else{wave='2浪洗盘';trend:'side';space='还有';action='BUY';riskTime='短期震荡洗盘，可继续持有或轻仓介入';confidence=60;}
+  } else {
+    if(absPct>=5){wave='C浪主跌';trend='down';space='已结束';action='EXIT';riskTime='主跌浪，立即退出';confidence=85;}
+    else if(absPct>=3){wave='A浪开始';trend='down';space='已结束';action='EXIT';riskTime='趋势破坏，建议退出';confidence=80;}
+    else if(absPct>=1.5){wave='B浪反抽';trend='side';space='接近结束';action='REDUCE';riskTime='反弹结构，注意下方风险';confidence=70;}
+    else{wave='4浪整理';trend='side';space='还有';action='HOLD';riskTime='短期整理，不改主升趋势';confidence=60;}
+  }
+
+  return{wave,trend,space,action,riskTime,confidence};
+}
+
+// ============ AI深度分析 ============
+async function analyzeWithAI(stocks){
+  const prompt=`你是一个"市场周期+波浪结构"分析引擎。基于以下股票今日涨跌数据，对每只股票进行波段判断。
+
+股票数据：
+${stocks.map((s,i)=>`${i+1}. ${s.name}(${s.code}) 今日涨跌幅:${s.pct>0?'+':''}${s.pct.toFixed(2)}% 现价:¥${s.price} 行业:${s.sector}`).join('\n')}
+
+对每只股票输出以下JSON字段（严格按此格式，只返回JSON数组）：
+[{"name":"股票名","wave":"波浪阶段","trend":"up/side/down","space":"还有/接近结束/已结束","action":"BUY/HOLD/REDUCE/EXIT","riskTime":"风险时间描述","confidence":75}]
+
+规则：
+- 涨幅>7%或连续大涨：可能5浪末端，EXIT或REDUCE
+- 涨幅3-7%：3浪主升，HOLD
+- 涨幅<3%刚启动：1-2浪，BUY
+- 下跌>3%：A浪，EXIT
+- 下跌1-3%：4浪整理或B浪，HOLD/REDUCE
+只返回JSON，不要其他文字。`;
+
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  const data=await res.json();
+  const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+  const match=text.match(/\[[\s\S]*\]/);
+  if(!match)throw new Error('no json');
+  return JSON.parse(match[0]);
+}
+
+// ============ 获取行情数据 ============
+function getPool(){
+  if(curGroup==='total'){
+    const all=[],seen=new Set();
+    ['ai','material','energy','manufacture'].forEach(g=>{
+      POOL[g].all.forEach(s=>{if(!seen.has(s.code)){seen.add(s.code);all.push({...s,groupKey:g});}});
+    });
+    return all;
+  }
+  return(POOL[curGroup][curSub]||POOL[curGroup].all).map(s=>({...s,groupKey:curGroup}));
+}
+
+async function fetchData(){
+  const mb=document.getElementById('mb');
+  const bi=document.getElementById('bi');
+  const bt=document.getElementById('bt');
+  mb.disabled=true;bi.innerHTML='<span class="spin">⟳</span>';bt.textContent='加载中...';
+  document.getElementById('content').innerHTML=`<div class="ltips">📡 获取实时行情...<br>🧠 准备战法分析...</div>`;
+
+  const pool=getPool();
+  const seen=new Set();
+  const uniq=pool.filter(s=>{if(seen.has(s.code))return false;seen.add(s.code);return true;});
+  const codes=uniq.map(s=>s.code).join(',');
+
+  try{
+    const res=await fetch(`/api/stock?codes=${encodeURIComponent(codes)}`);
+    const data=await res.json();
+    const diff=data?.data?.diff||[];
+    const results=[];
+    diff.forEach(item=>{
+      const found=uniq.find(s=>s.code.replace('sh','').replace('sz','')===(item.f12||''));
+      if(!found||item.f3==null||item.f3<=-9999)return;
+      results.push({
+        name:found.name,code:item.f12,sector:found.s,groupKey:found.groupKey||curGroup,
+        pct:parseFloat(item.f3),
+        price:item.f2>0?(item.f2/100).toFixed(2):'--',
+        yest:item.f15>0?(item.f15/100).toFixed(2):null,
+      });
+    });
+
+    if(!results.length){
+      document.getElementById('content').innerHTML=`<div class="err">暂无数据<br>请在交易时段使用（工作日 9:30–15:00）</div>`;
+      return;
+    }
+
+    results.sort((a,b)=>mode==='up'?b.pct-a.pct:a.pct-b.pct);
+    const now=new Date(),h=now.getHours(),m2=now.getMinutes(),inSession=(h>9||(h===9&&m2>=30))&&(h<15||(h===15&&m2===0));let filtered;if(inSession){filtered=(mode==='up'?results.filter(s=>s.pct>0):results.filter(s=>s.pct<0)).slice(0,10);}else{filtered=[...results].sort((a,b)=>mode==='up'?b.pct-a.pct:a.pct-b.pct).slice(0,10);}
+
+    if(!filtered.length){
+      document.getElementById('content').innerHTML=`<div class="err">${mode==='up'?'暂无上涨股票':'暂无下跌股票'}</div>`;
+      return;
+    }
+
+    // 先渲染行情，AI分析位置先显示loading
+    renderCards(filtered,null);
+
+    // 执行AI分析
+    if(aiMode==='ai'){
+      try{
+        const aiResults=await analyzeWithAI(filtered);
+        renderCards(filtered,aiResults);
+      }catch(e){
+        // AI失败降级到规则引擎
+        renderCards(filtered,'rule');
+      }
+    }else{
+      renderCards(filtered,'rule');
+    }
+
+  }catch(e){
+    document.getElementById('content').innerHTML=`<div class="err">数据获取失败，请稍后重试</div>`;
+  }finally{
+    mb.disabled=false;bi.textContent='⟳';bt.textContent='刷新数据';
+  }
+}
+
+function getActionBadge(action){
+  const map={
+    BUY:{cls:'badge-buy',label:'▲ BUY'},
+    HOLD:{cls:'badge-hold',label:'◆ HOLD'},
+    REDUCE:{cls:'badge-reduce',label:'▼ REDUCE'},
+    EXIT:{cls:'badge-exit',label:'✕ EXIT'},
+  };
+  return map[action]||map['HOLD'];
+}
+function getTrendBadge(trend){
+  if(trend==='up')return{cls:'trend-up',label:'↑ 上升'};
+  if(trend==='down')return{cls:'trend-down',label:'↓ 下跌'};
+  return{cls:'trend-side',label:'→ 震荡'};
+}
+function getSpaceBadge(space){
+  if(space==='还有')return{cls:'space-yes',label:'空间充足'};
+  if(space==='接近结束')return{cls:'space-end',label:'接近结束'};
+  return{cls:'space-done',label:'空间耗尽'};
+}
+
+function renderCards(stocks, aiData){
+  const medals=['🥇','🥈','🥉'];
+  const rcs=['r1','r2','r3'];
+  let html='';
+  stocks.forEach((s,i)=>{
+    const isUp=s.pct>=0;
+    const pctStr=isUp?`+${s.pct.toFixed(2)}%`:`${s.pct.toFixed(2)}%`;
+    const chgAmt=s.yest?(parseFloat(s.price)-parseFloat(s.yest)).toFixed(2):null;
+    const chgStr=chgAmt?(parseFloat(chgAmt)>=0?`+${chgAmt}`:`${chgAmt}`):'';
+    const rankLabel=i<3?medals[i]:`${i+1}`;
+    const rc=i<3?rcs[i]:'rn';
+    const gColor=GROUP_COLORS[s.groupKey]||'#4a5068';
+    const gName=GROUP_NAMES[s.groupKey]||'';
+    const showGroup=curGroup==='total';
+
+    // AI分析结果
+    let aiPanel='';
+    if(aiData===null){
+      aiPanel=`<div class="ai-panel loading"><div class="ai-loading-row"><div class="dot-anim"><span></span><span></span><span></span></div>战法分析中...</div></div>`;
+    }else{
+      let analysis;
+      if(aiData==='rule'){
+        analysis=analyzeStock(s);
+      }else{
+        const found=aiData.find(a=>a.name===s.name);
+        analysis=found||analyzeStock(s);
+      }
+      const ab=getActionBadge(analysis.action);
+      const tb=getTrendBadge(analysis.trend);
+      const sb=getSpaceBadge(analysis.space);
+      aiPanel=`<div class="ai-panel">
+        <div class="ai-row">
+          <span class="ai-badge ${ab.cls}">${ab.label}</span>
+          <span class="wave-badge">${analysis.wave}</span>
+          <span class="trend-badge ${tb.cls}">${tb.label}</span>
+          <span class="space-badge ${sb.cls}">${sb.label}</span>
+        </div>
+        <div class="risk-time">⏰ <span>${analysis.riskTime}</span></div>
+      </div>`;
+    }
+
+    if(i===3)html+=`<div class="divider">— 4 至 10 名 —</div>`;
+    html+=`<div class="card ${rc}">
+      <div class="card-top">
+        <div class="rank">${rankLabel}</div>
+        <div class="stock-info">
+          <div class="sname">${s.name}</div>
+          <div class="smeta">
+            <span class="scode">${s.code}</span>
+            <span class="stag2">${s.sector}</span>
+            ${showGroup?`<span class="gtag" style="color:${gColor};background:${gColor}22">${gName}</span>`:''}
+          </div>
+        </div>
+        <div class="price-block">
+          <div class="pct ${isUp?'up':'dn'}">${pctStr}</div>
+          <div class="price-row">
+            <span class="price">¥${s.price}</span>
+            ${chgStr?`<span class="chg ${isUp?'up':'dn'}">${chgStr}</span>`:''}
+          </div>
+        </div>
+      </div>
+      ${aiPanel}
+    </div>`;
+  });
+  html+=`<div class="ts">更新时间：${new Date().toLocaleTimeString('zh-CN')} · ${stocks.length}支 · ${aiMode==='ai'?'AI深度分析':'规则引擎分析'}</div>`;
+  document.getElementById('content').innerHTML=html;
+}
+
+renderSubTabs('total');
+</script>
+</body>
+</html>
