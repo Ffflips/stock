@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>AI半导体今日排行</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0c10;color:#e8ecf4;font-family:'PingFang SC','Hiragino Sans GB',sans-serif;min-height:100vh;padding:0 0 60px}
+.inner{max-width:480px;margin:0 auto;padding:20px 16px}
+.header{text-align:center;border-bottom:1px solid #1e2330;padding-bottom:18px;margin-bottom:20px}
+.tag{display:inline-block;font-size:10px;letter-spacing:3px;color:#00e5a0;border:1px solid #00e5a0;padding:3px 10px;border-radius:2px;margin-bottom:10px;font-family:monospace}
+.title{font-size:24px;font-weight:900;letter-spacing:2px;line-height:1.3;color:#fff;margin-bottom:6px}
+.sub{font-size:11px;color:#4a5068;font-family:monospace}
+
+/* 大板块 */
+.group-tabs{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.group-tabs::-webkit-scrollbar{display:none}
+.gtab{flex-shrink:0;padding:5px 12px;border-radius:4px;font-size:12px;border:1px solid #1e2330;background:transparent;color:#7a849c;cursor:pointer;font-family:inherit;transition:all 0.2s;font-weight:600}
+.gtab.on{color:#fff;border-color:currentColor}
+.gtab[data-group="ai"].on{background:rgba(0,229,160,0.15);color:#00e5a0;border-color:#00e5a0}
+.gtab[data-group="material"].on{background:rgba(255,180,0,0.15);color:#ffb400;border-color:#ffb400}
+.gtab[data-group="energy"].on{background:rgba(0,180,255,0.15);color:#00b4ff;border-color:#00b4ff}
+.gtab[data-group="manufacture"].on{background:rgba(255,77,106,0.15);color:#ff4d6a;border-color:#ff4d6a}
+
+/* 细分板块 */
+.sub-tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;min-height:32px}
+.sub-tabs::-webkit-scrollbar{display:none}
+.stab{flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:11px;border:1px solid #1e2330;background:transparent;color:#7a849c;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.stab.on{background:#00e5a0;color:#000;border-color:#00e5a0;font-weight:700}
+
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.lbl{font-size:13px;color:#7a849c;font-family:monospace}
+.toggle{display:flex;background:#111318;border:1px solid #1e2330;border-radius:6px;overflow:hidden}
+.toggle button{padding:6px 16px;font-size:12px;border:none;cursor:pointer;background:transparent;color:#7a849c;font-family:inherit;transition:all 0.2s}
+.toggle button.au{background:rgba(0,229,160,0.15);color:#00e5a0}
+.toggle button.ad{background:rgba(255,77,106,0.15);color:#ff4d6a}
+.mbtn{width:100%;padding:13px;background:transparent;border:1px solid #00e5a0;border-radius:10px;color:#00e5a0;font-size:14px;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:1px;font-family:inherit}
+.mbtn:disabled{opacity:0.4;cursor:not-allowed}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.card{background:#111318;border:1px solid #1e2330;border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.r1{border-left:3px solid gold}.r2{border-left:3px solid silver}.r3{border-left:3px solid #cd7f32}
+.rank{font-family:monospace;font-size:14px;font-weight:700;color:#4a5068;width:22px;text-align:center;flex-shrink:0}
+.r1 .rank{color:gold}.r2 .rank{color:silver}.r3 .rank{color:#cd7f32}
+.info{flex:1;min-width:0}
+.sname{font-size:15px;font-weight:700;color:#e8ecf4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta{margin-top:3px;display:flex;gap:6px;align-items:center}
+.scode{font-family:monospace;font-size:11px;color:#7a849c}
+.stag2{font-size:10px;color:#4a5068;background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:3px}
+.right{text-align:right;flex-shrink:0}
+.pct{font-family:monospace;font-size:18px;font-weight:700}
+.up{color:#00e5a0}.dn{color:#ff4d6a}
+.price-row{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:3px}
+.price{font-family:monospace;font-size:13px;font-weight:600;color:#e8ecf4}
+.chg{font-family:monospace;font-size:11px}
+.empty{text-align:center;padding:40px 20px;color:#4a5068}
+.empty .icon{font-size:40px;margin-bottom:10px}
+.empty p{font-size:13px;line-height:1.9}
+.ltips{text-align:center;padding:30px 20px;color:#7a849c;font-size:13px;line-height:2.4}
+.ts{text-align:center;font-family:monospace;font-size:11px;color:#4a5068;margin-top:10px}
+.err{background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.2);border-radius:10px;padding:14px;text-align:center;color:#ff4d6a;font-size:13px;line-height:1.8;margin-bottom:14px}
+.notice{margin-top:20px;padding:12px 14px;border:1px solid #1e2330;border-radius:8px;font-size:11px;color:#4a5068;line-height:1.9}
+.notice strong{color:#7a849c}
+.divider{text-align:center;font-size:11px;color:#2a3040;margin:4px 0 8px;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div class="inner">
+  <div class="header">
+    <div class="tag">MARKET · SCANNER</div>
+    <div class="title">📈 精选行情<br>今日排行</div>
+    <div class="sub">精选股票池 · 东方财富数据</div>
+  </div>
+
+  <!-- 大板块 -->
+  <div class="group-tabs" id="groupTabs">
+    <button class="gtab on" data-group="ai">🤖 AI半导体</button>
+    <button class="gtab" data-group="material">🪨 新材料</button>
+    <button class="gtab" data-group="energy">⚡ 新能源</button>
+    <button class="gtab" data-group="manufacture">🏭 高端制造</button>
+  </div>
+
+  <!-- 细分板块 -->
+  <div class="sub-tabs" id="subTabs"></div>
+
+  <div class="row">
+    <span class="lbl">TOP 10 排行</span>
+    <div class="toggle">
+      <button id="btnUp" class="au" onclick="setMode('up')">▲ 涨幅</button>
+      <button id="btnDn" onclick="setMode('down')">▼ 跌幅</button>
+    </div>
+  </div>
+
+  <button class="mbtn" id="mb" onclick="fetchData()">
+    <span id="bi">⟳</span>
+    <span id="bt">获取今日排行</span>
+  </button>
+
+  <div id="content">
+    <div class="empty">
+      <div class="icon">📡</div>
+      <p>选择板块后点击按钮<br>获取实时涨跌排行</p>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>覆盖板块：</strong>AI半导体 · 新材料 · 新能源 · 高端制造<br>
+    <strong>数据来源：</strong>东方财富实时行情<br>
+    <strong>交易时间：</strong>工作日 9:30–15:00<br>
+    <strong>免责声明：</strong>仅供参考，不构成投资建议
+  </div>
+</div>
+
+<script>
+const DATA = {
+  ai: {
+    all:      {name:'全部',stocks:[
+      {code:'sh688256',name:'寒武纪',s:'AI芯片'},{code:'sh688041',name:'海光信息',s:'AI芯片'},
+      {code:'sh688047',name:'龙芯中科',s:'CPU'},{code:'sz002230',name:'科大讯飞',s:'AI'},
+      {code:'sh688088',name:'虹软科技',s:'AI视觉'},{code:'sz002415',name:'海康威视',s:'AI安防'},
+      {code:'sh688981',name:'中芯国际',s:'晶圆'},{code:'sh688012',name:'中微公司',s:'刻蚀设备'},
+      {code:'sz002371',name:'北方华创',s:'半导体设备'},{code:'sh603986',name:'兆易创新',s:'存储芯片'},
+      {code:'sz300782',name:'卓胜微',s:'射频芯片'},{code:'sz002049',name:'紫光国微',s:'安全芯片'},
+      {code:'sh688099',name:'晶晨股份',s:'SoC'},{code:'sh688819',name:'天岳先进',s:'碳化硅'},
+      {code:'sz000977',name:'浪潮信息',s:'服务器'},{code:'sh601138',name:'工业富联',s:'算力'},
+      {code:'sz300308',name:'中际旭创',s:'光模块'},{code:'sh688521',name:'芯原股份',s:'IP核'},
+      {code:'sh688148',name:'芯碁微装',s:'光刻设备'},{code:'sz002236',name:'大华股份',s:'AI视觉'},
+    ]},
+    ai:       {name:'人工智能',stocks:[
+      {code:'sh688256',name:'寒武纪',s:'AI芯片'},{code:'sh688041',name:'海光信息',s:'AI芯片'},
+      {code:'sh688047',name:'龙芯中科',s:'CPU'},{code:'sz002230',name:'科大讯飞',s:'AI'},
+      {code:'sh688088',name:'虹软科技',s:'AI视觉'},{code:'sz002415',name:'海康威视',s:'AI安防'},
+      {code:'sz002236',name:'大华股份',s:'AI视觉'},{code:'sh688516',name:'奥比中光',s:'3D视觉'},
+      {code:'sh688009',name:'中国软件',s:'信创'},{code:'sz300450',name:'先导智能',s:'AI装备'},
+    ]},
+    semi:     {name:'半导体',stocks:[
+      {code:'sh688981',name:'中芯国际',s:'晶圆代工'},{code:'sh688012',name:'中微公司',s:'刻蚀设备'},
+      {code:'sz002371',name:'北方华创',s:'半导体设备'},{code:'sh688148',name:'芯碁微装',s:'光刻设备'},
+      {code:'sh688819',name:'天岳先进',s:'碳化硅'},{code:'sh688396',name:'华微电子',s:'功率半导体'},
+      {code:'sh603986',name:'兆易创新',s:'存储芯片'},{code:'sz300782',name:'卓胜微',s:'射频芯片'},
+      {code:'sh688521',name:'芯原股份',s:'IP核'},{code:'sh688120',name:'华海清科',s:'CMP设备'},
+    ]},
+    chip:     {name:'芯片',stocks:[
+      {code:'sz002049',name:'紫光国微',s:'安全芯片'},{code:'sh688099',name:'晶晨股份',s:'SoC'},
+      {code:'sz300613',name:'富瀚微',s:'视频芯片'},{code:'sz002180',name:'纳思达',s:'打印芯片'},
+      {code:'sh688711',name:'宏微科技',s:'IGBT'},{code:'sh688469',name:'芯导科技',s:'模拟芯片'},
+      {code:'sh688041',name:'海光信息',s:'AI芯片'},{code:'sh688256',name:'寒武纪',s:'AI芯片'},
+      {code:'sh688047',name:'龙芯中科',s:'CPU'},{code:'sz002371',name:'北方华创',s:'设备'},
+    ]},
+    compute:  {name:'算力设备',stocks:[
+      {code:'sz000977',name:'浪潮信息',s:'服务器'},{code:'sh601138',name:'工业富联',s:'算力硬件'},
+      {code:'sz300308',name:'中际旭创',s:'光模块'},{code:'sz002281',name:'光迅科技',s:'光模块'},
+      {code:'sh688165',name:'大族激光',s:'激光设备'},{code:'sh688426',name:'康希通信',s:'射频芯片'},
+      {code:'sh600588',name:'用友网络',s:'算力软件'},{code:'sz300782',name:'卓胜微',s:'射频'},
+      {code:'sh688589',name:'力芯微',s:'电源芯片'},{code:'sh603986',name:'兆易创新',s:'存储'},
+    ]},
+  },
+  material: {
+    all:      {name:'全部',stocks:[
+      {code:'sh600516',name:'方大炭素',s:'石墨烯'},{code:'sh688707',name:'振华新材',s:'磁性材料'},
+      {code:'sz002089',name:'新海宜',s:'稀土'},{code:'sz002460',name:'赣锋锂业',s:'锂'},
+      {code:'sh600111',name:'北方稀土',s:'稀土永磁'},{code:'sz300748',name:'金力永磁',s:'稀土永磁'},
+      {code:'sh600233',name:'圆通速递',s:'新材料'},{code:'sz002082',name:'万邦达',s:'小金属'},
+      {code:'sh600819',name:'耀皮玻璃',s:'新材料'},{code:'sh601899',name:'紫金矿业',s:'小金属'},
+      {code:'sz300055',name:'鼎汉技术',s:'磁性材料'},{code:'sh600197',name:'伊力特',s:'锰'},
+      {code:'sz002497',name:'雅化集团',s:'锂'},{code:'sh603987',name:'康德莱',s:'新材料'},
+      {code:'sz300073',name:'当升科技',s:'正极材料'},{code:'sh688408',name:'中信博',s:'新材料'},
+    ]},
+    magnetic: {name:'磁性材料',stocks:[
+      {code:'sh688707',name:'振华新材',s:'磁性材料'},{code:'sz300055',name:'鼎汉技术',s:'磁性材料'},
+      {code:'sz300748',name:'金力永磁',s:'稀土永磁'},{code:'sh600111',name:'北方稀土',s:'稀土永磁'},
+      {code:'sz002089',name:'新海宜',s:'稀土'},{code:'sh600稀土',name:'中国稀土',s:'稀土'},
+      {code:'sz002601',name:'龙磁科技',s:'磁性材料'},{code:'sh603799',name:'华友钴业',s:'钴'},
+      {code:'sz002466',name:'天齐锂业',s:'锂资源'},{code:'sh600111',name:'北方稀土',s:'稀土'},
+    ]},
+    graphene: {name:'石墨烯',stocks:[
+      {code:'sh600516',name:'方大炭素',s:'石墨烯'},{code:'sz002560',name:'通达电气',s:'石墨烯'},
+      {code:'sh603659',name:'璞泰来',s:'石墨负极'},{code:'sz300568',name:'星源材质',s:'隔膜'},
+      {code:'sh603899',name:'晨光文具',s:'碳材料'},{code:'sz002594',name:'比亚迪',s:'新材料'},
+      {code:'sh601677',name:'明泰铝业',s:'新材料'},{code:'sz300073',name:'当升科技',s:'正极'},
+      {code:'sz002460',name:'赣锋锂业',s:'锂'},{code:'sh600197',name:'伊力特',s:'锰'},
+    ]},
+    rareearth:{name:'稀土永磁',stocks:[
+      {code:'sh600111',name:'北方稀土',s:'稀土永磁'},{code:'sz300748',name:'金力永磁',s:'稀土永磁'},
+      {code:'sz002090',name:'金智科技',s:'稀土'},{code:'sh603799',name:'华友钴业',s:'钴'},
+      {code:'sz002466',name:'天齐锂业',s:'锂资源'},{code:'sz002460',name:'赣锋锂业',s:'锂'},
+      {code:'sh601899',name:'紫金矿业',s:'小金属'},{code:'sz002082',name:'万邦达',s:'锰'},
+      {code:'sh600197',name:'伊力特',s:'锰'},{code:'sz002497',name:'雅化集团',s:'锂盐'},
+    ]},
+  },
+  energy: {
+    all:      {name:'全部',stocks:[
+      {code:'sz002594',name:'比亚迪',s:'新能源汽车'},{code:'sh601633',name:'长城汽车',s:'新能源汽车'},
+      {code:'sz002460',name:'赣锋锂业',s:'锂电池'},{code:'sz300750',name:'宁德时代',s:'锂电池'},
+      {code:'sh600941',name:'中国移动',s:'氢能'},{code:'sh600839',name:'四川长虹',s:'固态电池'},
+      {code:'sz002572',name:'索菲亚',s:'储能'},{code:'sh603659',name:'璞泰来',s:'负极材料'},
+      {code:'sz300568',name:'星源材质',s:'隔膜'},{code:'sh600438',name:'通威股份',s:'光伏'},
+      {code:'sh601985',name:'中国核电',s:'氢能'},{code:'sz002756',name:'永兴材料',s:'锂电'},
+      {code:'sz300073',name:'当升科技',s:'正极材料'},{code:'sh688005',name:'容百科技',s:'正极'},
+      {code:'sh601238',name:'广汽集团',s:'新能源车'},{code:'sz002202',name:'金风科技',s:'风电'},
+    ]},
+    lithium:  {name:'锂电池',stocks:[
+      {code:'sz300750',name:'宁德时代',s:'锂电池'},{code:'sz002460',name:'赣锋锂业',s:'锂资源'},
+      {code:'sz002466',name:'天齐锂业',s:'锂资源'},{code:'sh603659',name:'璞泰来',s:'负极材料'},
+      {code:'sz300568',name:'星源材质',s:'隔膜'},{code:'sh688005',name:'容百科技',s:'正极'},
+      {code:'sz300073',name:'当升科技',s:'正极材料'},{code:'sz002756',name:'永兴材料',s:'锂盐'},
+      {code:'sz002497',name:'雅化集团',s:'锂盐'},{code:'sh600839',name:'四川长虹',s:'固态电池'},
+    ]},
+    hydrogen: {name:'氢能源',stocks:[
+      {code:'sh601985',name:'中国核电',s:'氢能'},{code:'sh600941',name:'中国移动',s:'氢能源'},
+      {code:'sz002074',name:'国轩高科',s:'燃料电池'},{code:'sh601006',name:'大秦铁路',s:'氢能'},
+      {code:'sz300124',name:'汇川技术',s:'氢能设备'},{code:'sh601727',name:'上海电气',s:'氢能'},
+      {code:'sz002594',name:'比亚迪',s:'氢能车'},{code:'sh600438',name:'通威股份',s:'绿氢'},
+      {code:'sh601238',name:'广汽集团',s:'氢能车'},{code:'sz002202',name:'金风科技',s:'风电制氢'},
+    ]},
+    solid:    {name:'固态电池',stocks:[
+      {code:'sh600839',name:'四川长虹',s:'固态电池'},{code:'sz300750',name:'宁德时代',s:'固态电池'},
+      {code:'sz002594',name:'比亚迪',s:'固态电池'},{code:'sh603659',name:'璞泰来',s:'固态负极'},
+      {code:'sh688005',name:'容百科技',s:'固态正极'},{code:'sz300568',name:'星源材质',s:'固态隔膜'},
+      {code:'sz002460',name:'赣锋锂业',s:'固态锂'},{code:'sz300073',name:'当升科技',s:'正极材料'},
+      {code:'sz002756',name:'永兴材料',s:'锂材料'},{code:'sh688707',name:'振华新材',s:'固态材料'},
+    ]},
+    nevcar:   {name:'新能源汽车',stocks:[
+      {code:'sz002594',name:'比亚迪',s:'新能源车'},{code:'sh601633',name:'长城汽车',s:'新能源车'},
+      {code:'sh601238',name:'广汽集团',s:'新能源车'},{code:'sh600104',name:'上汽集团',s:'新能源车'},
+      {code:'sz000625',name:'长安汽车',s:'新能源车'},{code:'sh601689',name:'拓普集团',s:'汽车零部件'},
+      {code:'sz300750',name:'宁德时代',s:'动力电池'},{code:'sz002074',name:'国轩高科',s:'动力电池'},
+      {code:'sh603444',name:'吉比特',s:'车联网'},{code:'sz300124',name:'汇川技术',s:'电机'},
+    ]},
+  },
+  manufacture: {
+    all:      {name:'全部',stocks:[
+      {code:'sh688100',name:'威立雅',s:'机器人'},{code:'sz300124',name:'汇川技术',s:'机器人'},
+      {code:'sh600893',name:'航发动力',s:'军工'},{code:'sh601168',name:'西部矿业',s:'军工'},
+      {code:'sh601985',name:'中国核电',s:'核电'},{code:'sh601727',name:'上海电气',s:'核电'},
+      {code:'sz300001',name:'特锐德',s:'无人机'},{code:'sz002179',name:'中航光电',s:'军工'},
+      {code:'sh600760',name:'中航沈飞',s:'军工'},{code:'sz002049',name:'紫光国微',s:'军工芯片'},
+      {code:'sh688036',name:'传音控股',s:'海工'},{code:'sz300677',name:'英科医疗',s:'无人机'},
+      {code:'sh601989',name:'中国重工',s:'海工装备'},{code:'sh600150',name:'中国船舶',s:'海工'},
+      {code:'sh603025',name:'大豪科技',s:'机器人'},{code:'sz300485',name:'赛升药业',s:'人形机器人'},
+    ]},
+    robot:    {name:'机器人',stocks:[
+      {code:'sz300124',name:'汇川技术',s:'工业机器人'},{code:'sh603025',name:'大豪科技',s:'机器人控制'},
+      {code:'sh688100',name:'威立雅',s:'机器人'},{code:'sz300485',name:'赛升药业',s:'人形机器人'},
+      {code:'sh600886',name:'国投电力',s:'机器人应用'},{code:'sz002527',name:'新时达',s:'机器人'},
+      {code:'sh688538',name:'和辉光电',s:'人形机器人'},{code:'sz300296',name:'汉唐自科',s:'机器人'},
+      {code:'sz002750',name:'龙津药业',s:'人形机器人'},{code:'sh603960',name:'克来机电',s:'工业机器人'},
+    ]},
+    military: {name:'军工',stocks:[
+      {code:'sh600893',name:'航发动力',s:'航空发动机'},{code:'sh600760',name:'中航沈飞',s:'战斗机'},
+      {code:'sz002179',name:'中航光电',s:'军工电子'},{code:'sz002049',name:'紫光国微',s:'军工芯片'},
+      {code:'sh601168',name:'西部矿业',s:'军工材料'},{code:'sh600316',name:'洪都航空',s:'军工'},
+      {code:'sh600765',name:'中航重机',s:'军工锻件'},{code:'sz002415',name:'海康威视',s:'军工安防'},
+      {code:'sh688002',name:'睿创微纳',s:'军工芯片'},{code:'sz300273',name:'和仁科技',s:'军工软件'},
+    ]},
+    nuclear:  {name:'核电',stocks:[
+      {code:'sh601985',name:'中国核电',s:'核电运营'},{code:'sh601727',name:'上海电气',s:'核电设备'},
+      {code:'sh601390',name:'中国中铁',s:'核电建设'},{code:'sz002202',name:'金风科技',s:'核电配套'},
+      {code:'sh600308',name:'华泰股份',s:'核电材料'},{code:'sh601186',name:'中国铁建',s:'核电建设'},
+      {code:'sz000777',name:'中核科技',s:'核电阀门'},{code:'sh600995',name:'文山电力',s:'核电'},
+      {code:'sh603699',name:'纽威股份',s:'核电阀门'},{code:'sz002885',name:'京源环保',s:'核电水处理'},
+    ]},
+    drone:    {name:'无人机',stocks:[
+      {code:'sz300001',name:'特锐德',s:'无人机充电'},{code:'sz300677',name:'英科医疗',s:'无人机材料'},
+      {code:'sh600760',name:'中航沈飞',s:'无人机'},{code:'sz002179',name:'中航光电',s:'无人机连接'},
+      {code:'sz002049',name:'紫光国微',s:'无人机芯片'},{code:'sh688002',name:'睿创微纳',s:'无人机探测'},
+      {code:'sz300124',name:'汇川技术',s:'无人机电机'},{code:'sh600893',name:'航发动力',s:'无人机动力'},
+      {code:'sh601989',name:'中国重工',s:'海上无人机'},{code:'sh600150',name:'中国船舶',s:'无人艇'},
+    ]},
+    marine:   {name:'海工装备',stocks:[
+      {code:'sh601989',name:'中国重工',s:'海工装备'},{code:'sh600150',name:'中国船舶',s:'船舶制造'},
+      {code:'sh600808',name:'马钢股份',s:'海工钢材'},{code:'sh601727',name:'上海电气',s:'海工设备'},
+      {code:'sz000029',name:'深深房A',s:'海工'},{code:'sh600072',name:'中船科技',s:'海工'},
+      {code:'sh601390',name:'中国中铁',s:'海工建设'},{code:'sz002202',name:'金风科技',s:'海上风电'},
+      {code:'sh603699',name:'纽威股份',s:'海工阀门'},{code:'sh600308',name:'华泰股份',s:'海工材料'},
+    ]},
+  }
+};
+
+let mode='up', curGroup='ai', curSub='all';
+
+// 初始化细分板块
+function renderSubTabs(group) {
+  const container = document.getElementById('subTabs');
+  const keys = Object.keys(DATA[group]);
+  container.innerHTML = keys.map(k =>
+    `<button class="stab ${k===curSub?'on':''}" data-sub="${k}">${DATA[group][k].name}</button>`
+  ).join('');
+}
+
+document.getElementById('groupTabs').addEventListener('click', function(e) {
+  const t = e.target.closest('.gtab');
+  if (!t) return;
+  document.querySelectorAll('.gtab').forEach(x => x.classList.remove('on'));
+  t.classList.add('on');
+  curGroup = t.dataset.group;
+  curSub = 'all';
+  renderSubTabs(curGroup);
+});
+
+document.getElementById('subTabs').addEventListener('click', function(e) {
+  const t = e.target.closest('.stab');
+  if (!t) return;
+  document.querySelectorAll('.stab').forEach(x => x.classList.remove('on'));
+  t.classList.add('on');
+  curSub = t.dataset.sub;
+});
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnUp').className = m==='up' ? 'au' : '';
+  document.getElementById('btnDn').className = m==='down' ? 'ad' : '';
+}
+
+async function fetchData() {
+  const mb = document.getElementById('mb');
+  const bi = document.getElementById('bi');
+  const bt = document.getElementById('bt');
+  mb.disabled = true;
+  bi.innerHTML = '<span class="spin">⟳</span>';
+  bt.textContent = '加载中...';
+  document.getElementById('content').innerHTML = `<div class="ltips">📡 连接服务器...<br>📊 获取实时数据...<br>📈 计算TOP 10排行...</div>`;
+
+  const pool = DATA[curGroup][curSub].stocks;
+  const codes = pool.map(s => s.code).join(',');
+
+  try {
+    const res = await fetch(`/api/stock?codes=${encodeURIComponent(codes)}`);
+    const data = await res.json();
+    const diff = data?.data?.diff || [];
+
+    const results = [];
+    diff.forEach(item => {
+      const found = pool.find(s => {
+        const num = s.code.replace('sh','').replace('sz','');
+        return num === (item.f12||'');
+      });
+      if (!found || item.f3==null || item.f3 <= -999) return;
+      results.push({
+        name: found.name,
+        code: item.f12,
+        sector: found.s,
+        pct: parseFloat(item.f3),
+        price: item.f2>0 ? (item.f2/100).toFixed(2) : '--',
+        yest: item.f15>0 ? (item.f15/100).toFixed(2) : null,
+      });
+    });
+
+    if (!results.length) {
+      document.getElementById('content').innerHTML = `<div class="err">暂无数据<br>请在交易时段使用（工作日 9:30–15:00）</div>`;
+      return;
+    }
+
+    results.sort((a,b) => mode==='up' ? b.pct-a.pct : a.pct-b.pct);
+    const filtered = mode==='up'
+      ? results.filter(s => s.pct >= 0).slice(0,10)
+      : results.filter(s => s.pct < 0).slice(0,10);
+
+    if (!filtered.length) {
+      document.getElementById('content').innerHTML = `<div class="err">${mode==='up'?'暂无上涨股票':'暂无下跌股票'}<br>请稍后刷新</div>`;
+      return;
+    }
+
+    render(filtered);
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="err">数据获取失败，请稍后重试</div>`;
+  } finally {
+    mb.disabled = false;
+    bi.textContent = '⟳';
+    bt.textContent = '刷新数据';
+  }
+}
+
+function render(stocks) {
+  const medals = ['🥇','🥈','🥉'];
+  let html = '';
+  stocks.forEach((s,i) => {
+    const isUp = s.pct >= 0;
+    const pctStr = isUp ? `+${s.pct.toFixed(2)}%` : `${s.pct.toFixed(2)}%`;
+    const chgAmt = s.yest ? (parseFloat(s.price)-parseFloat(s.yest)).toFixed(2) : null;
+    const chgStr = chgAmt ? (parseFloat(chgAmt)>=0 ? `+${chgAmt}` : `${chgAmt}`) : '';
+    const rankLabel = i<3 ? medals[i] : `${i+1}`;
+    if (i===3) html += `<div class="divider">— 4 至 10 名 —</div>`;
+    html += `<div class="card r${Math.min(i+1,4)}">
+      <div class="rank">${rankLabel}</div>
+      <div class="info">
+        <div class="sname">${s.name}</div>
+        <div class="meta">
+          <span class="scode">${s.code}</span>
+          <span class="stag2">${s.sector}</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="pct ${isUp?'up':'dn'}">${pctStr}</div>
+        <div class="price-row">
+          <span class="price">¥${s.price}</span>
+          ${chgStr?`<span class="chg ${isUp?'up':'dn'}">${chgStr}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  });
+  html += `<div class="ts">更新时间：${new Date().toLocaleTimeString('zh-CN')} · ${stocks.length}支数据</div>`;
+  document.getElementById('content').innerHTML = html;
+}
+
+// 初始化
+renderSubTabs('ai');
+</script>
+</body>
+</html>
